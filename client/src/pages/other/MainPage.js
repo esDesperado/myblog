@@ -75,6 +75,7 @@ const MainPage = observer(() => {
                                 //item.classList.remove('FDAEnd')
                             }
                         }
+                        return true
                     })
                 }
                 function offset(el){
@@ -146,7 +147,7 @@ const MainPage = observer(() => {
             d = d.trim()
             let arr = d.split(':')
             styles2[arr[0]] = arr[1];
-            return
+            return true
         })
         setStyles(styles2)
         css = (JSON.parse((inface.currSettings || {}).obj || "{}").cssM || '').trim().replace(/\n/g, "")
@@ -155,7 +156,7 @@ const MainPage = observer(() => {
         css.split(';').filter(d=>{
             let arr = d.split(':')
             styles2[arr[0]] = arr[1];
-            return
+            return true
         })
         setStylesM(styles2)
         /*let newSettings = JSON.parse(JSON.stringify(inface.currSettings));newSettings.obj = JSON.stringify(obj1);inface.setCurrSettings(newSettings)*/
@@ -204,6 +205,7 @@ const MainPage = observer(() => {
             if(d.type === 'Товар' && JSON.parse(d.obj || "{}").category && !arr2.includes(JSON.parse(d.obj || "{}").category)){
                 arr2.push(JSON.parse(d.obj || "{}").category)
             }
+            return true
         })
         setCategories(arr2)
     },[JSON.stringify(inface.blocks)])
@@ -448,7 +450,7 @@ const MainPage = observer(() => {
                             <select value={JSON.parse(inface.currSettings.obj || '{}').innerLink || 'Нет'} onChange={e=>{setObjProperty('innerLink',e.target.value,inface.currSettings.id).then(d=>{inface.setBlocks(d);inface.setCurrSettings(d.filter(d=>d.id === inface.currSettings.id)[0])}).catch(d=>alert(d))}}>
                                 <option>Нет</option>
                                 {inface.pages.map(di=>
-                                    <option>{(di.title+' '+'страница_'+di.id).substr(0, 34)}</option>
+                                    <option>{(di.title+' страница_'+di.id).substr(0, 34)}</option>
                                 )}
                                 {inface.blocks.slice().sort((a,b)=>a.id - b.id).map(di=>
                                     <option>{di.type+'_'+di.id}</option>
@@ -557,14 +559,14 @@ const MainPage = observer(() => {
             </div>}
 
             <div style={{position:'relative',display:'grid',width:'100%',justifyItems:'center'}}>
-                {user.role > 3 && document.location.pathname.includes(ADMIN_ROUTE)?<div style={{zIndex:'1009',position:'relative',display:'grid',justifyItems:'center',gridAutoFlow:'column',alignItems:'center',fontWeight:'bold',width:'calc(100% - 30px)',textAlign:'center',padding:'5px 15px',color:inface.aback,background:inface.acolor,}}>
+                {user.role > 3 && document.location.pathname.includes(ADMIN_ROUTE) &&<div style={{zIndex:'1009',position:'relative',display:'grid',justifyItems:'center',gridAutoFlow:'column',alignItems:'center',fontWeight:'bold',width:'calc(100% - 30px)',textAlign:'center',padding:'5px 15px',color:inface.aback,background:inface.acolor,}}>
                     <div>
                         Страница: <select value={page.title} onChange={e=>{inface.setMoveblock('');if(e.target.value === 'Новая страница'){changeSite('addPage').then(data=>{inface.setPages(data.pages);navigate('../'+data.path + ADMIN_ROUTE);})}else{navigate('../'+inface.pages.filter(page=>page.title === e.target.value)[0].path + ADMIN_ROUTE)}}} style={{fontWeight:'bold',background:inface.aback,color:inface.acolor,marginRight:'20px'}}>
                         {inface.pages.slice().sort().map(d=><option key={d.title}>{d.title}</option>)}
                             <option>Новая страница</option>
                         </select>
                     </div>
-                </div>:null}
+                </div>}
                 <div id={'page'+page.id} style={{minHeight:'2fr',justifyItems:'stretch',display:"grid",width:'100%',position:'relative'}}>
                     <style>{JSON.parse(page.obj || '{}').css}</style>
                     {inface.blocks.slice().sort((a,b)=>a.priority-b.priority).map((d,key)=>d.parent === 'page'+page.id &&<Distrib data={d}/>)}
