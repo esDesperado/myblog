@@ -10,8 +10,6 @@ import('./styles/reg&log.css');
 import('./styles/body.css');
 import('./styles/anim.css');
 export const Context = createContext(null)
-
-
 ReactDOM.render(
     <Context.Provider value={{
         user: new UserStore(),
@@ -20,7 +18,5 @@ ReactDOM.render(
     }}>
         <App />
     </Context.Provider>,
-
-
     document.getElementById('root')
 );

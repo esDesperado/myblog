@@ -1,15 +1,9 @@
-﻿import React, {useContext,useState,useEffect,useRef,createRef} from 'react';
+﻿import React, {useContext,useState,useEffect} from 'react';
 import {Context} from '../index';
-import {NavLink,useNavigate} from "react-router-dom";
 import {observer} from "mobx-react-lite";
-import {setBAttr,deleteBlock,deleteComponent,addComponent,setCAttr,auth} from "../http/API"
-import {Editor} from '@tinymce/tinymce-react';
-import {ADMIN_ROUTE} from "../utils/consts";
-import Product from "./Product"
 import Distrib from "./Distrib"
-
 const Block = observer((data,v) => {
-    const {user,product,inface} = useContext(Context)
+    const {inface} = useContext(Context)
     data = data.data
     let [category,setCategory] = useState("")
     let [categories,setCategories] = useState([])
@@ -19,11 +13,12 @@ const Block = observer((data,v) => {
             if(d.type === 'Товар' && JSON.parse(d.obj || "{}").category && !arr2.includes(JSON.parse(d.obj || "{}").category)){
                 arr2.push(JSON.parse(d.obj || "{}").category)
             }
+            return true
         })
         if(!inface.category.length){inface.setCategory(arr2[0])}
         if(!category.length){setCategory(arr2[0])}
         if(JSON.stringify(arr2) !== JSON.stringify(categories)){setCategories(arr2)}
-    },[JSON.stringify(inface.blocks),categories])
+    },[JSON.stringify(inface.blocks),categories,category.length,inface])
     return(
     <div style={{display:'grid',gridTemplateColumns:'1fr 3fr',gridGap:'1em'}}>
         <div className='noselect' style={{background:'#F7F7F7',borderRadius:'7px',padding:'1em',alignSelf:'start'}}>
@@ -37,7 +32,6 @@ const Block = observer((data,v) => {
                 {inface.blocks.filter(d=>d.type === 'Товар' && (!category.length || JSON.parse(d.obj || "{}").category === inface.category)).slice().sort((a,b)=>a.priority-b.priority).map((d,key)=><Distrib data={d} key={category+d.id+JSON.parse(d.obj || '{}').background}/>)}
             </div>
         </div>
-
     </div>)
 });
 export default Block;

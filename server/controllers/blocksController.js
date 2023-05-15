@@ -23,13 +23,6 @@ class Controller{
                     one = await Blocks.create({priority:parseInt(priority),type:arr1[0].type,parent,obj:arr1[0].obj})
                 }
                 idObj[arr1[0].id] = one.id
-                /*function setNewId(oldId,newId){
-                    return arr1.filter(d=>{
-                        if(d.id === oldId){d.id = newId}
-                        if(d.parent === oldId){d.parent = newId}
-                        return d
-                    })
-                }*/
                 arr1.shift()
                 async function addPatternElement(d){
                     try{
@@ -80,14 +73,14 @@ class Controller{
                 }
             })
             let components = await Components.findAll()
-            /*components.map(d=>{
+            components.map(d=>{
                 if(d.type === (one.id+'')){
                     if(d.img !== 'null' && d.img){
                         fs.unlink('../server/static/componentImages/' + d.img, err => {});
                     }
                     d.destroy()
                 }
-            })*/
+            })
             async function destroyElement(el){
                 try{
                     /*if(JSON.parse(el.obj || '{}').background !== 'null' && JSON.parse(el.obj || '{}').background){
@@ -149,121 +142,9 @@ class Controller{
             const {id} = req.params
             const block = await Blocks.findOne({where:{id}})
             let data = await Blocks.findAll({where:{parent:'block'+id}})
-            function kek(){
+            function getNewValue(){
                 if(name === 'obj' && JSON.parse(attr).background !== JSON.parse(block.obj || '{}').background){
                     let newObj = JSON.parse(attr)
-                    /*if(newObj.background !== JSON.parse(block.obj || '{}').background){
-                        if(newObj.background && JSON.parse(block.obj || '{}').background !== 'null' && JSON.parse(block.obj || '{}').background){
-                            fs.unlink('../server/static/interfaceImages/' + JSON.parse(block.obj || '{}').background, err => {});
-                            if(newObj.background !== ''){
-                                let fileName = uuid.v4() + ".png"
-                                newObj.background.mv(path.resolve(__dirname, '..', 'static', 'interfaceImages', fileName))
-                                newObj.background = fileName
-                            }
-                            return JSON.stringify(newObj)
-                        }
-                    }*/
-                    /*if(name === 'img'){
-                        if(attr !== block.img && block.img !== 'null' && block.img){
-                            fs.unlink('../server/static/interfaceImages/' + block.img, err => {});
-                            if(req.files){
-                                const {attr} = req.files
-                                let fileName = uuid.v4() + ".png"
-                                attr.mv(path.resolve(__dirname, '..', 'static', 'interfaceImages', fileName))
-                                return fileName
-                            }else if(attr){
-                                return attr
-                            }else if(!attr){
-                                return ''
-                            }
-                        }else{
-                            if(req.files){
-                                const {attr} = req.files
-                                let fileName = uuid.v4() + ".png"
-                                attr.mv(path.resolve(__dirname, '..', 'static', 'interfaceImages', fileName))
-                                return fileName
-                            }else if(attr){
-                                return attr
-                            }else if(!attr){
-                                return ''
-                            }
-                        }
-                    }else if(name === 'img3'){
-                        if(attr !== block.img3 && block.img3 !== 'null' && block.img3){
-                            fs.unlink('../server/static/interfaceImages/' + block.img3, err => {});
-                            if(req.files){
-                                const {attr} = req.files
-                                let fileName = uuid.v4() + ".png"
-                                attr.mv(path.resolve(__dirname, '..', 'static', 'interfaceImages', fileName))
-                                return fileName
-                            }else if(attr){
-                                return attr
-                            }else if(!attr){
-                                return ''
-                            }
-                        }else{
-                            if(req.files){
-                                const {attr} = req.files
-                                let fileName = uuid.v4() + ".png"
-                                attr.mv(path.resolve(__dirname, '..', 'static', 'interfaceImages', fileName))
-                                return fileName
-                            }else if(attr){
-                                return attr
-                            }else if(!attr){
-                                return ''
-                            }
-                        }
-                    }else if(name === 'img2'){
-                        if(attr !== block.img2 && block.img2 !== 'null' && block.img2){
-                            fs.unlink('../server/static/interfaceImages/' + block.img2, err => {});
-                            if(req.files){
-                                const {attr} = req.files
-                                let fileName = uuid.v4() + ".png"
-                                attr.mv(path.resolve(__dirname, '..', 'static', 'interfaceImages', fileName))
-                                return fileName
-                            }else if(attr){
-                                return attr
-                            }else if(!attr){
-                                return ''
-                            }
-                        }else{
-                            if(req.files){
-                                const {attr} = req.files
-                                let fileName = uuid.v4() + ".png"
-                                attr.mv(path.resolve(__dirname, '..', 'static', 'interfaceImages', fileName))
-                                return fileName
-                            }else if(attr){
-                                return attr
-                            }else if(!attr){
-                                return ''
-                            }
-                        }
-                    }else if(name === 'video'){
-                        if(attr !== block.video && block.video !== 'null' && block.video){
-                            fs.unlink('../server/static/videos/' + block.video, err => {});
-                            if(req.files){
-                                const {attr} = req.files
-                                let fileName = uuid.v4() + ".mp4"
-                                attr.mv(path.resolve(__dirname, '..', 'static', 'videos', fileName))
-                                return fileName
-                            }else if(attr){
-                                return attr
-                            }else if(!attr){
-                                return ''
-                            }
-                        }else{
-                            if(req.files){
-                                const {attr} = req.files
-                                let fileName = uuid.v4() + ".mp4"
-                                attr.mv(path.resolve(__dirname, '..', 'static', 'videos', fileName))
-                                return fileName
-                            }else if(attr){
-                                return attr
-                            }else if(!attr){
-                                return ''
-                            }
-                        }
-                    }*/
                 }else{
                     if(name === 'priority'){
                         if(attr === '+'){
@@ -288,9 +169,7 @@ class Controller{
                     }
                 }
             }
-
-            block[name] = kek()
-
+            block[name] = getNewValue()
             await block.save()
             data = await Blocks.findAll()
             return res.json(data)

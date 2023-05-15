@@ -8,7 +8,7 @@ class InterfaceController{
         try{
             const {attr,name} = req.body
             const data = await Interfaces.findOne({where:{id:0}})
-            function kek(){
+            function getNewValue(){
                 if(name === 'favicon'){
                     if(attr !== data.favicon && data.favicon !== 'null' && data.favicon){
                         fs.unlink('../server/static/favicon/' + data.favicon, err => {});
@@ -36,7 +36,7 @@ class InterfaceController{
                     return attr
                 }
             }
-            data[name] = await kek()
+            data[name] = await getNewValue()
             await data.save()
 
             return res.json(data)

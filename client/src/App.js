@@ -3,22 +3,19 @@ import {BrowserRouter} from "react-router-dom";
 import AppRouter from "./components/AppRouter"
 import {observer} from "mobx-react-lite";
 import {Context} from "./index";
-
-import {check,fetchComponents,getInterface,fetchBlocks,fetchOneComponent,changeSite} from "./http/API";
+import {check,fetchComponents,getInterface,fetchBlocks} from "./http/API";
 const App = observer(() => {
-    const {user,product,inface} = useContext(Context)
-    const [checkTimer,setCheckTimer] = useState(0)
+    const {user,inface} = useContext(Context)
     useEffect(()=>{
         if(user.role > 0){
             const timer = setInterval(()=>{
-                //setCheckTimer(checkTimer + 0.0000001)
                 check().then(data => {
                     if(data.role !== user.role){user.setRole(data.role)}
                 }).catch(data=>{user.setRole(0)})
             },12500)
             return () => clearTimeout(timer)
         }
-    },[user.role,checkTimer])
+    },[user.role])
     useEffect(()=>{
         if(document.documentElement.clientHeight > inface.height + 5){
             inface.setHeight(document.documentElement.clientHeight)
@@ -103,19 +100,11 @@ const App = observer(() => {
             }).finally(()=>{setLoading(false)})
         }
     },[user.role,window.localStorage.getItem('token'),localStorage.getItem('token')])
-    let [y,setY] = useState(3)
     useEffect(()=>{
         if(inface.interface.js){
             try{window.eval(inface.interface.js)}catch(err){console.error('Ошибка во время исполнения кода: \n\n',err)}
         }
     },[inface.interface.js])
-    function dict_reverse(obj) {
-        let obj2 = Object.keys(obj).reverse();
-        obj2.forEach((i)=>{
-            obj2[i] = obj[i];
-        })
-        return obj2;
-    }
     if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
         if(!inface.mobile){
             inface.setMobile(true)

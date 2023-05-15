@@ -37,7 +37,7 @@ class Controller{
             const {id} = req.params
             const one = await Components.findOne({where:{id}})
             let data = await Components.findAll({where:{type}})
-            function kek(){
+            function getNewValue(){
                 if(name === 'img'){
                     if(one.img !== 'null' && one.img){
                         if(one.type !== 'priority'){
@@ -107,9 +107,9 @@ class Controller{
                 }
             }
             if(name === 'imgRm'){
-                one.img = kek()
+                one.img = getNewValue()
             }else{
-                one[name] = kek()
+                one[name] = getNewValue()
             }
             await one.save()
             data = await Components.findAll()

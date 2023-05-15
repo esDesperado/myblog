@@ -1,4 +1,4 @@
-import React, {useContext,useState,useEffect,useRef} from 'react';
+import React, {useContext,useState,useEffect} from 'react';
 import {Context} from '../index';
 import {observer} from "mobx-react-lite";
 import {ADMIN_ROUTE} from "../utils/consts";
@@ -7,7 +7,6 @@ import LazyImage from "./LazyImage";
 const PostHeader = observer((data,v) => {
     const {user,inface} = useContext(Context)
     data = data.data
-    v = data.variation
     const [CS, setCS] = useState(0)
     const [CL,setCL] = useState(2)
     const [SC,setSC] = useState(true)
@@ -29,7 +28,7 @@ const PostHeader = observer((data,v) => {
             },sliderTime)
             return () => clearTimeout(sliderTimer)
         }else{}
-    }, [sliderTime,CS,CL,SC])
+    }, [sliderTime,CS,CL,SC,data.id,data.obj,user.role])
     const [CLI,setCLI] = useState([])
     useEffect(()=>{
         if(JSON.stringify(CLI) !== (JSON.parse(data.obj || '{}').imgArr || '[]')){
@@ -38,7 +37,7 @@ const PostHeader = observer((data,v) => {
     },[data.obj,CLI])
     useEffect(()=>{
         if(CL !== CLI.length){setCL(CLI.length)}
-    },[CLI])
+    },[CLI,CL])
     const [touch,setTouch] = useState(false)
     const [mTouch,setMTouch] = useState(false)
     let startTranslate = 0
@@ -106,7 +105,6 @@ const PostHeader = observer((data,v) => {
             })
         }
     },[touch,mTouch])
-    const editorRef = useRef(0);
     const [h1,setH1] = useState(inface.height)
     const [w1,setW1] = useState(inface.width)
     useEffect(()=>{
@@ -116,7 +114,7 @@ const PostHeader = observer((data,v) => {
             setH1(JSON.parse(data.obj || "{}").trueHeight === 'true'?document.getElementById('block'+data.id).getBoundingClientRect().width / 16 * 9:document.getElementById('block'+data.id).getBoundingClientRect().height)
             if(document.getElementById('sl'+data.id+'CoI0')){document.getElementById('sl'+data.id+'CoI0').style.transitionDuration = '12s'}
         }
-    },[h1,w1,document.getElementById('block'+data.id),document.getElementById('block'+data.id) && document.getElementById('block'+data.id).getBoundingClientRect().width,inface.width])
+    },[h1,w1,data.id,data.obj,document.getElementById('block'+data.id),document.getElementById('block'+data.id).getBoundingClientRect().width,inface.width])
     if(JSON.parse(data.obj || "{}").scroll === 'Наведением мыши' && document.getElementById('sliderContainer'+data.id)){
         let block = document.getElementById('sliderContainer'+data.id).getBoundingClientRect()
         document.getElementById('sliderContainer'+data.id).addEventListener('mousemove',e=>{
@@ -131,8 +129,8 @@ const PostHeader = observer((data,v) => {
         <div style={{position:'relative',width:'100%',height:h1 + 'px',overflow:'hidden',}}>
             <div id={'slider'+data.id} style={{transform:'translateX(' + -(w1 * (CS)) + 'px)',transitionProperty:'transform',transitionDuration:JSON.parse(data.obj || "{}").scroll === 'Наведением мыши'?'0s':'1.3s',left:(JSON.parse(data.obj || "{}").scroll || 'Зажатием мыши') === 'Зажатием мыши'?-(w1 * (CL > 0?CL > 1?CL > 2?2:2:1:0)) + 'px':'0',gridTemplateColumns:(JSON.parse(data.obj || "{}").scroll || 'Зажатием мыши') === 'Зажатием мыши'?'repeat('+(CL + 4)+', '+w1+'px)':'repeat('+CL+', '+w1+'px)',gridTemplateRows:'100%',position:'absolute',top:'0',minWidth:'100%',height:!inface.phm > 0?h1 - inface.hh + 'px':h1 + 'px',display:'grid',}}>
                 {(JSON.parse(data.obj || "{}").scroll || 'Зажатием мыши') === 'Зажатием мыши' && CLI.map((d,key)=>key > CLI.length - 3 &&
-                <div style={{display:'grid',width:w1 + 'px',height:'100%',position:'relative',overflow:'hidden'}}>
-                    <LazyImage style={{width:'100%',height:'100%',objectFit:'cover'}} src={process.env.REACT_APP_API_URL + d} alt=''/>
+                <div style={{width:w1 + 'px',height:'100%',position:'relative',overflow:'hidden'}}>
+                    <LazyImage style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'center',}} src={process.env.REACT_APP_API_URL + d} alt=''/>
                 </div>)}
                 {CLI.map((d,key)=>{
                     if(document.getElementById('sl'+data.id+'CoI'+key) && JSON.parse(data.obj || "{}").autoScroll !== 'false'){
@@ -146,22 +144,22 @@ const PostHeader = observer((data,v) => {
                         }
                     }
                     return(
-                    <div style={{display:'grid',width:w1 + 'px',height:'100%',position:'relative',overflow:'hidden'}}>
-                        <LazyImage id={'sl'+data.id+'CoI'+key}  style={{width:'100%',height:'100%',objectFit:'cover'}} src={process.env.REACT_APP_API_URL + d} alt=''/>
+                    <div style={{width:w1 + 'px',height:'100%',position:'relative',overflow:'hidden'}}>
+                        <LazyImage id={'sl'+data.id+'CoI'+key}  style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'center'}} src={process.env.REACT_APP_API_URL + d} alt=''/>
                     </div>
                     )
                 })}
                 {(JSON.parse(data.obj || "{}").scroll || 'Зажатием мыши') === 'Зажатием мыши' && CLI.map((d,key)=>key < 2 &&
-                <div style={{display:'grid',width:w1 + 'px',height:'100%',position:'relative',overflow:'hidden'}}>
-                    <LazyImage  style={{width:'100%',height:'100%',objectFit:'cover'}} src={process.env.REACT_APP_API_URL + d} alt=''/>
+                <div style={{width:w1 + 'px',height:'100%',position:'relative',overflow:'hidden'}}>
+                    <LazyImage  style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'center'}} src={process.env.REACT_APP_API_URL + d} alt=''/>
                 </div>)}
             </div>
         </div>
         {JSON.parse(data.obj || "{}").sliderButtons === 'Слайды'?<div style={{textAlign:'center',width:w1+'px',position:'absolute',bottom:-(w1 / 8 / 16 * 9) + 'px'}}>
             <div style={{boxShadow:!inface.mobile?'inset 0px 0px 20px 5px '+(JSON.parse(data.obj || "{}").sliderColor || '#ffffff'):'inset 0px 0px 3px 1px '+(JSON.parse(data.obj || "{}").sliderColor || '#ffffff'),transform:CS < 0?'translateX('+((CL - 1) * w1 / 8 - w1 * Math.floor((CL - 1) / 8)) + 'px) translateY(' + (Math.floor((CL - 1) / 8) * w1 / 8 / 16 * 9) + 'px)':CS < CL?'translateX('+(CS * w1 / 8 - w1 * Math.floor(CS / 8)) + 'px) translateY(' + (Math.floor(CS / 8) * w1 / 8 / 16 * 9) + 'px)':'translateX(0px) translateY(0px)',border:!inface.mobile?'3px '+(JSON.parse(data.obj || "{}").sliderColor || '#ffffff')+' solid':'1px '+(JSON.parse(data.obj || "{}").sliderColor || '#ffffff')+' solid',height:w1 / 8 / 16 * 9 + 'px',outline:'none',margin:'none',width:inface.mobile?w1 / 8 - 2 + 'px':w1 / 8 - 4 + 'px',zIndex:'2',top:'0',left:'0',position:'absolute',transitionDuration:'0.6s'}}/>
             {CL > 1 && CLI.map((d,key)=>
-            <div style={{zIndex:'1',position:'relative',overflow:'hidden',width:w1 / 8 + 'px',height:w1 / 8 / 16 * 9 + 'px',display:'grid',float:'left',cursor:'pointer',transitionDuration:'0.8s'}} onClick={()=>{setSliderTime(11000);setCS(key)}}>
-                <LazyImage  style={{width:'100%',height:'100%',objectFit:'cover'}} src={process.env.REACT_APP_API_URL + d}/>
+            <div style={{zIndex:'1',position:'relative',overflow:'hidden',width:w1 / 8 + 'px',height:w1 / 8 / 16 * 9 + 'px',float:'left',cursor:'pointer',transitionDuration:'0.8s'}} onClick={()=>{setSliderTime(11000);setCS(key)}}>
+                <LazyImage style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'center'}} src={process.env.REACT_APP_API_URL + d}/>
             </div>)}
         </div>:
         <div style={{textAlign:'center',width:'100%',position:'absolute',zIndex:'3',bottom:JSON.parse(data.obj || "{}").sliderButtons === 'Точки под слайдером'?'-20%':'7%'}}>

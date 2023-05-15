@@ -1,24 +1,16 @@
 ﻿import React, {useContext,useState,useEffect,useRef,createRef} from 'react';
 import {Context} from '../index';
-import {NavLink,useNavigate} from "react-router-dom";
 import {observer} from "mobx-react-lite";
-import {auth} from "../http/API"
 import {setBAttr,deleteBlock,deleteComponent,addComponent,setCAttr,sendQuiz} from "../http/API"
 import {Editor} from '@tinymce/tinymce-react';
 import {ADMIN_ROUTE} from "../utils/consts";
 import LazyImage from "./LazyImage";
-
-const Block = observer((data,v) => {
-    const {user,product,inface} = useContext(Context)
+const Block = observer((data) => {
+    const {user,inface} = useContext(Context)
     data = data.data
-    v = data.variation
-    const navigate = useNavigate()
-
     const editorRef = useRef(inface.components.filter(d=>d.type===data.id+'').slice().sort((a,b)=>a.priority - b.priority).map((d,key)=>createRef()))
     const block = useRef(0)
-    const [id,setId] = useState(0)
     const [CL,setCL] = useState(0)
-    const [arr,setArr] = useState([])
     const [h,setH] = useState(0)
     const [w,setW] = useState(0)
     const [question,setQuestion] = useState(0)
@@ -33,7 +25,7 @@ const Block = observer((data,v) => {
         let count = 0
         inface.components.map(d=>d.type === data.id+''?count++:null)
         setCL(count)
-    },[inface.components])
+    },[inface.components,data.id])
     if(data.img3 && data.img3.length && h===0 && w===0){
         let img = new Image();
         img.src = process.env.REACT_APP_API_URL + data.img3
@@ -130,7 +122,7 @@ const Block = observer((data,v) => {
                     <svg onClick={()=>{if(d.priority < CL - 1){setCAttr('priority','+',data.id+'',d.id).then(d=>{inface.setComponents(d)}).catch(d=>alert(d))}}} style={{transform:'rotate(180deg)',verticalAlign:'top',cursor:'pointer',width:'28px',height:'28px',fill:inface.acolor,overflow:'hidden',position:'relative'}} viewBox="-60 -50 260 260" xmlns="http://www.w3.org/2000/svg"><use xlinkHref='#arrowSVG' ></use></svg>
                     <svg onClick={()=>{if(window.confirm('Вы действительно хотите безвозвратно удалить этот компонент?')){deleteComponent(d.id).then(d=>{inface.setComponents(d)}).catch(d=>alert(d))}}} style={{verticalAlign:'top',top:'1px',cursor:'pointer',width:'28px',height:'28px',marginRight:'7px',fill:inface.acolor,overflow:'hidden',position:'relative'}} viewBox="0 0 596 596" xmlns="http://www.w3.org/2000/svg"><use xlinkHref='#deleteSVG' ></use></svg>
                 </div>}
-                <div style={{background:v === '2'?JSON.parse(data.obj || "{}").blockBC || inface.interface.background:'transparent',boxShadow:v === '2'?'0px 0px 20px '+(JSON.parse(data.obj || "{}").blockS || '#EAEAEA'):'none',padding:inface.width > 1100?'15px 15px 15px 15px':'0',placeItems:'center',justifySelf:'center',margin:'0',width:'100%',borderRadius:'5px',maxWidth:'100%',position:'relative',display:'grid',gridTemplateColumns:'100%',position:'relative',}}>
+                <div style={{padding:inface.width > 1100?'15px 15px 15px 15px':'0',placeItems:'center',justifySelf:'center',margin:'0',width:'100%',borderRadius:'5px',maxWidth:'100%',position:'relative',display:'grid',gridTemplateColumns:'100%',}}>
                     {quizEnd && (JSON.parse(d.obj || "{}").cType || 'тест') === 'тест' && <div style={{letterSpacing:inface.width > 450?'0.3px':'1px',fontSize:inface.width > 1100?'1.3em':'1.2em',textAlign:'center',fontWeight:'400',borderRadius:'15px',padding:inface.width > 1100?'280px 40px':'140px 40px',width:'calc(100% - 120px)',height:inface.width > 1100?'calc(100% - 560px - 3em)':'calc(100% - 280px - 3em)',color:JSON.parse(d.obj || "{}").color || data.color || inface.interface.color,background:JSON.parse(d.obj || "{}").background || data.background || inface.interface.background,marginBottom:'3em',}}><b style={{fontSize:'1.6em',marginBottom:'10px',display:'inline-block'}}>Мы получили вашу заявку!</b><br/> Наши менеджеры свяжутся с вами в ближайшее время!</div>}
                     {!quizEnd && (JSON.parse(d.obj || "{}").cType || 'тест') === 'тест' &&<div style={{gridTemplateColumns:'100%',display:'grid',gridGap:inface.width > 1100?'2em':'1em',justifyItems:'center',padding:inface.width > 1100?'40px':'20px',width:inface.width > 1100?'calc(100% - 80px)':inface.width > 350?'calc(100% - 80px)':'calc(100% - 40px)',height:inface.width > 1100?'calc(100% - 80px - 3em)':'auto',marginBottom:'3em',color:JSON.parse(d.obj || "{}").color || data.color || inface.interface.color,background:JSON.parse(d.obj || "{}").background || data.background || inface.interface.background,fontSize:(JSON.parse(data.obj || "{}").fontSize || 1)+'em',borderRadius:'15px',overflow:'hidden'}}>
                         <div style={{width:'90%',background:'#F5F6F6',borderRadius:'30px',height:'40px',position:'relative',padding:'5px'}}>
@@ -304,11 +296,11 @@ const Block = observer((data,v) => {
                         JSON.parse(d.obj || "{}").number && <a style={{fontSize:'1.5em',textDecoration:'none',fontWeight:'bold',color:inface.interface.main || 'black',textAlign:'center',display:'block'}} href={'tel:'+JSON.parse(d.obj || "{}").number}>{JSON.parse(d.obj || "{}").number}</a>}
                         <div style={{textAlign:'center',paddingTop:'30px'}}>
                             {user.role > 3 && document.location.pathname.includes(ADMIN_ROUTE)?<input defaultValue={JSON.parse(d.obj || "{}").tg || ''} onBlur={e=>{let obj1 = JSON.parse(d.obj || "{}");obj1.tg = e.target.value;setCAttr('obj',JSON.stringify(obj1),data.id,d.id).then(d=>{inface.setComponents(d)}).catch(d=>alert(d))}} style={{fontWeight:'bold',verticalAlign:'top',padding:'0 3px',fontSize:'0.6em',background:inface.aback,color:inface.acolor,width:'350px'}} placeholder="tg" type='text'/>:
-                            JSON.parse(d.obj || "{}").tg && <a style={{margin:'0 10px'}} target="_blank" href={JSON.parse(d.obj || "{}").tg}><LazyImage style={{width:'50px'}} src={process.env.REACT_APP_API_URL + 'tg.png'}/></a>}
+                            JSON.parse(d.obj || "{}").tg && <a style={{margin:'0 10px'}} target="_blank" rel="noopener noreferrer" href={JSON.parse(d.obj || "{}").tg}><LazyImage style={{width:'50px'}} src={process.env.REACT_APP_API_URL + 'tg.png'}/></a>}
                             {user.role > 3 && document.location.pathname.includes(ADMIN_ROUTE)?<input defaultValue={JSON.parse(d.obj || "{}").wa || ''} onBlur={e=>{let obj1 = JSON.parse(d.obj || "{}");obj1.wa = e.target.value;setCAttr('obj',JSON.stringify(obj1),data.id,d.id).then(d=>{inface.setComponents(d)}).catch(d=>alert(d))}} style={{fontWeight:'bold',verticalAlign:'top',padding:'0 3px',fontSize:'0.6em',background:inface.aback,color:inface.acolor,width:'350px'}} placeholder="whatsapp" type='text'/>:
-                            JSON.parse(d.obj || "{}").wa && <a style={{margin:'0 10px'}} target="_blank" href={JSON.parse(d.obj || "{}").wa}><LazyImage style={{width:'50px'}} src={process.env.REACT_APP_API_URL + 'wa.png'}/></a>}
+                            JSON.parse(d.obj || "{}").wa && <a style={{margin:'0 10px'}} target="_blank" rel="noopener noreferrer" href={JSON.parse(d.obj || "{}").wa}><LazyImage style={{width:'50px'}} src={process.env.REACT_APP_API_URL + 'wa.png'}/></a>}
                             {user.role > 3 && document.location.pathname.includes(ADMIN_ROUTE)?<input defaultValue={JSON.parse(d.obj || "{}").vk || ''} onBlur={e=>{let obj1 = JSON.parse(d.obj || "{}");obj1.vk = e.target.value;setCAttr('obj',JSON.stringify(obj1),data.id,d.id).then(d=>{inface.setComponents(d)}).catch(d=>alert(d))}} style={{fontWeight:'bold',verticalAlign:'top',padding:'0 3px',fontSize:'0.6em',background:inface.aback,color:inface.acolor,width:'350px'}} placeholder="vk" type='text'/>:
-                            JSON.parse(d.obj || "{}").vk && <a style={{margin:'0 10px'}} target="_blank" href={JSON.parse(d.obj || "{}").vk}><LazyImage style={{width:'50px'}} src={process.env.REACT_APP_API_URL + 'vk.png'}/></a>}
+                            JSON.parse(d.obj || "{}").vk && <a style={{margin:'0 10px'}} target="_blank" rel="noopener noreferrer" href={JSON.parse(d.obj || "{}").vk}><LazyImage style={{width:'50px'}} src={process.env.REACT_APP_API_URL + 'vk.png'}/></a>}
                         </div>
                     </div>
                     <div style={{display:inface.width > 1100?'grid':'none',gridGap:'1.6em',marginTop:'5em'}}>

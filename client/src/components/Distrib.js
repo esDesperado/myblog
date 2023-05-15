@@ -1,26 +1,25 @@
 ﻿import React, {useContext, useEffect,useState,useRef} from 'react';
 import {observer} from "mobx-react-lite";
-import {MP_ROUTE,ADMIN_ROUTE} from "../utils/consts";
+import {ADMIN_ROUTE} from "../utils/consts";
 import {Context} from "../index";
-import {NavLink,useNavigate} from "react-router-dom";
-import Video from "./Video"
+import {useNavigate} from "react-router-dom";
+//import Video from "./Video"
 import Slider from "./Slider"
 import Calculator from "./Calculator"
 import Quiz from "./Quiz"
 import Container from "./Container"
 import Form from "./Form"
 import Copy from "./Copy"
-import {setBAttr,deleteBlock,auth,changeSite} from "../http/API"
+import {setBAttr,deleteBlock,changeSite} from "../http/API"
 import LazyImage from "./LazyImage";
 import ListOfProducts from "./ListOfProducts"
 import Product from "./Product"
 
 const Distributor = observer((data) => {
-    const {product,inface,user} = useContext(Context)
+    const {inface,user} = useContext(Context)
     data = data.data
-
     function output(){
-        if((inface.mobile && JSON.parse(data.obj || "{}").mobileShow || !inface.mobile && JSON.parse(data.obj || "{}").pcShow) || user.role > 0 && document.location.pathname.includes(ADMIN_ROUTE)){
+        if(((inface.mobile && JSON.parse(data.obj || "{}").mobileShow) || (!inface.mobile && JSON.parse(data.obj || "{}").pcShow)) || (user.role > 0 && document.location.pathname.includes(ADMIN_ROUTE))){
             if(data.type==='Контейнер'){return <Container data={data}/>}
             else if(data.type==='HTML блок'){return <div dangerouslySetInnerHTML={{__html:JSON.parse(data.obj || '{}').html}} />}
             else if(data.type==='Текст'){return <div className={JSON.parse(data.obj || "{}").anim?'FDAStart':'FDAEnd'} onClick={()=>{if(user.role > 3 && document.location.pathname.includes(ADMIN_ROUTE)){inface.setCurrText(data)}}} style={{width:'100%',}} dangerouslySetInnerHTML={{__html:JSON.parse(data.obj || '{}').text || ''}}/>}
@@ -28,7 +27,7 @@ const Distributor = observer((data) => {
             else if(data.type==='Квиз'){return <Quiz data={data}/>}
             else if(data.type==='Список товаров'){return <ListOfProducts data={data}/>}
             else if(data.type==='Товар'){return <Product data={data}/>}
-            else if(data.type==='Видео'){return <Video data={data}/>}
+            //else if(data.type==='Видео'){return <Video data={data}/>}
             else if(data.type==='Слайдер'){return <Slider data={data}/>}
             else if(data.type==='Калькулятор'){return <Calculator data={data}/>}
             else{return null}
@@ -55,7 +54,6 @@ const Distributor = observer((data) => {
         }
     });
     let [stylesM,setStylesM] = useState(JSON.parse(data.obj || "{}").css || '')
-    let [styles,setStyles] = useState('')
     useEffect(()=>{
         let css = (JSON.parse(data.obj || "{}").css || '').trim().replace(/\n/g, "").replace(/\r/g, "")
         let cssM = (JSON.parse(data.obj || "{}").cssM || '').trim().replace(/\n/g, "").replace(/\r/g, "")
@@ -65,19 +63,18 @@ const Distributor = observer((data) => {
         css.split(';').filter(d=>{
             let arr = d.split(':')
             mStyles[arr[0]] = arr[1];
-            return
+            return true
         })
         cssM.split(';').filter(d=>{
             let arr = d.split(':')
             mStyles[arr[0]] = arr[1];
-            return
+            return true
         })
         let toCSS = '';
         for(let key in mStyles){toCSS = toCSS + key+':'+mStyles[key]+';\n'};
         setStylesM('')
         setStylesM(toCSS)
-        /*let newSettings = JSON.parse(JSON.stringify(inface.currSettings));newSettings.obj = JSON.stringify(obj1);inface.setCurrSettings(newSettings)*/
-    },[JSON.stringify(data || '{}')])
+    },[JSON.stringify(data),data.obj])
     if(JSON.parse(data.obj || '{}').js && (!user.role > 0 || !document.location.pathname.includes(ADMIN_ROUTE))){
         try{window.eval(JSON.parse(data.obj || '{}').js)}catch(err){console.error('Ошибка во время исполнения кода: \n\n',err)}
     }
@@ -86,33 +83,22 @@ const Distributor = observer((data) => {
         return <Copy data={data}/>
     }else{
     return(
-        <div ref={block} id={'block'+data.id} onMouseOver={()=>{
-        if(inface.moveblock !== 'block'+data.id &&
-         (!inface.moveblock.includes('block') ||
-          inface.blocks.filter(d=>d.id+'' === inface.moveblock.replace('block','')).length === 0 ||
-           (inface.moveblock === '' || (document.getElementById(inface.moveblock).offsetWidth > document.getElementById('block'+data.id).offsetWidth) ||
-            parseInt(inface.moveblock.replace('block','')) < data.id))){
-            inface.setMoveblock('block'+data.id);
-            }}}
-             onMouseOut={e=>{let rect = document.getElementById('block'+data.id).getBoundingClientRect();
-             if(inface.moveblock === 'block'+data.id && !data.parent.includes('page') && (e.pageX < rect.left || e.pageX > rect.right || e.pageY < rect.top || e.pageY > rect.bottom)){
-             inface.setMoveblock(data.parent);
-             }
-
-        }} onClick={()=>{
-            if(user.role > 3 && document.location.pathname.includes(ADMIN_ROUTE)){}else{
-                if((JSON.parse(data.obj || '{}').href || '').includes('http')){
-                    //document.location.href = JSON.parse(data.obj || '{}').href
-                    window.open(JSON.parse(data.obj || '{}').href, '_blank')
-                }else if((JSON.parse(data.obj || '{}').innerLink || 'Нет') === 'Нет'){
-                }else{
-                    if(JSON.parse(data.obj || '{}').innerLink.includes('страница')){
-                    navigate('/'+inface.pages.filter(p=>p.id === parseInt(JSON.parse(data.obj || '{}').innerLink.split('_')[1]))[0].path)
+        <div ref={block} id={'block'+data.id}
+            onMouseOver={()=>{if(inface.moveblock !== 'block'+data.id && (!inface.moveblock.includes('block') || inface.blocks.filter(d=>d.id+'' === inface.moveblock.replace('block','')).length === 0 || (inface.moveblock === '' || (document.getElementById(inface.moveblock).offsetWidth > document.getElementById('block'+data.id).offsetWidth) || parseInt(inface.moveblock.replace('block','')) < data.id))){inface.setMoveblock('block'+data.id);}}}
+            onMouseOut={e=>{let rect = document.getElementById('block'+data.id).getBoundingClientRect();if(inface.moveblock === 'block'+data.id && !data.parent.includes('page') && (e.pageX < rect.left || e.pageX > rect.right || e.pageY < rect.top || e.pageY > rect.bottom)){inface.setMoveblock(data.parent);}}} onClick={()=>{
+                if(user.role > 3 && document.location.pathname.includes(ADMIN_ROUTE)){}else{
+                    if((JSON.parse(data.obj || '{}').href || '').includes('http')){
+                        window.open(JSON.parse(data.obj || '{}').href, '_blank')
+                    }else if((JSON.parse(data.obj || '{}').innerLink || 'Нет') === 'Нет'){
+                        //
                     }else{
-                    let el = document.querySelector('#block'+JSON.parse(data.obj || '{}').innerLink.split('_')[1]);
-                    el.scrollIntoView({block:"start",behavior:'smooth'})
+                        if(JSON.parse(data.obj || '{}').innerLink.includes('страница')){
+                        navigate('/'+inface.pages.filter(p=>p.id === parseInt(JSON.parse(data.obj || '{}').innerLink.split('_')[1]))[0].path)
+                        }else{
+                        let el = document.querySelector('#block'+JSON.parse(data.obj || '{}').innerLink.split('_')[1]);
+                        el.scrollIntoView({block:"start",behavior:'smooth'})
+                        }
                     }
-                }
             }}} style={inface.currSettings && inface.currSettings.id && inface.currSettings.id === data.id?{border:'2px '+inface.acolor2+' dashed'}:{transitionProperty:'transform,opacity',}} className={!(user.role > 3 && document.location.pathname.includes(ADMIN_ROUTE)) && ((JSON.parse(data.obj || '{}').href || '').includes('http') || (JSON.parse(data.obj || '{}').innerLink || 'Нет') !== 'Нет')?JSON.parse(data.obj || "{}").anim === 'true'?'FDAStart block hoverLink':'FDAEnd block hoverLink':JSON.parse(data.obj || "{}").anim === 'true'?'FDAStart block':'FDAEnd block'}>
             <style>
                 #block{data.id}{'{'}
@@ -136,10 +122,10 @@ const Distributor = observer((data) => {
                     <div onClick={()=>{if(window.confirm('Вы действительно хотите безвозвратно удалить этот блок?')){if(inface.currSettings && inface.currSettings.id === data.id){inface.setCurrSettings(null);document.getElementById('blockSettings').style.display = 'none';document.getElementById('blockSettings').style.opacity = 0;}inface.setMoveblock(data.parent);deleteBlock(data.id).then(d=>{inface.setBlocks(d)}).catch(d=>alert(d))}}} style={{cursor:'pointer',}}>Удалить</div>
                 </div>
             </div>}
-            {data.type !== 'Картинка' && data.type !== 'Товар'?JSON.parse(data.obj || "{}").background && JSON.parse(data.obj || "{}").background.length > 4 &&<div style={{position:'absolute',right:'0',top:'0',minWidth:'100%',width:JSON.parse(data.obj || "{}").fWidth || 'auto',overflow:'hidden',display:'grid',height:'100%',zIndex:'0'}}>
-                <LazyImage id={'backgroundImage'+data.id} style={inface.width / inface.height > 0.82?{minHeight:'100%',placeSelf:'center',zIndex:'0',minWidth:(JSON.parse(data.obj || "{}").fWidth || 'auto') === 'auto'?'100%':JSON.parse(data.obj || "{}").fWidth,right:JSON.parse(data.obj || "{}").fRight || '0',bottom:JSON.parse(data.obj || "{}").fTop || '0',position:(JSON.parse(data.obj || "{}").fTop || '0') === '0' && (JSON.parse(data.obj || "{}").fRight || '0') === '0' && (JSON.parse(data.obj || "{}").fWidth || 'auto') === 'auto'?'relative':'absolute',minHeight:(JSON.parse(data.obj || "{}").fWidth || 'auto') === 'auto'?'100%':'auto',height:(JSON.parse(data.obj || "{}").fWidth || 'auto') === 'auto'?(block.current.offsetWidth / block.current.offsetHeight <= w / h)?'100%':'auto':'auto',width:(JSON.parse(data.obj || "{}").fWidth || 'auto') === 'auto'?(block.current.offsetWidth / block.current.offsetHeight <= w / h)?'auto':'100%':JSON.parse(data.obj || "{}").fWidth,}:{placeSelf:'center',zIndex:'0',minWidth:(JSON.parse(data.obj || "{}").fWidthM || 'auto') === 'auto'?'100%':JSON.parse(data.obj || "{}").fWidthM,right:JSON.parse(data.obj || "{}").fRightM || '0',bottom:JSON.parse(data.obj || "{}").fTopM || '0',position:(JSON.parse(data.obj || "{}").fRightM || '0') === '0' && (JSON.parse(data.obj || "{}").fTopM || '0') === '0' && (JSON.parse(data.obj || "{}").fWidthM || 'auto') === 'auto'?'relative':'absolute',minHeight:(JSON.parse(data.obj || "{}").fWidthM || 'auto') === 'auto'?'100%':'auto',height:(JSON.parse(data.obj || "{}").fWidthM || 'auto') === 'auto'?(block.current.offsetWidth / block.current.offsetHeight <= w / h)?'100%':'auto':'auto',width:(JSON.parse(data.obj || "{}").fWidthM || 'auto') === 'auto'?(block.current.offsetWidth / block.current.offsetHeight <= w / h)?'auto':'100%':JSON.parse(data.obj || "{}").fWidthM,minHeight:'100%',}} src={process.env.REACT_APP_API_URL + JSON.parse(data.obj || "{}").background} alt=''/>
-                <div style={{zIndex:'1',width:'100%',height:'100%',background:inface.width / inface.height > 0.82?((JSON.parse(data.obj || "{}").fBack || '#000000') + (JSON.parse(data.obj || "{}").fOpacity !== null?JSON.parse(data.obj || "{}").fOpacity * 255:0.5 * 255).toString(16).split('.')[0]):((JSON.parse(data.obj || "{}").fBackM || '#000000') + (JSON.parse(data.obj || "{}").fOpacityM !== null?JSON.parse(data.obj || "{}").fOpacityM * 255:0.5 * 255).toString(16).split('.')[0]),transitionDuration:'0.3s'}}></div>
-            </div>:JSON.parse(data.obj || "{}").background && data.type !== 'Товар' && JSON.parse(data.obj || "{}").background.length > 4 &&<LazyImage id={'backgroundImage'+data.id} style={{width:'100%',height:'100%',objectFit:'contain'}} src={process.env.REACT_APP_API_URL + JSON.parse(data.obj || "{}").background} alt=''/>}
+            {data.type !== 'Картинка' && data.type !== 'Товар'?JSON.parse(data.obj || "{}").background && JSON.parse(data.obj || "{}").background.length > 4 &&<div style={{position:'absolute',right:'0',top:'0',width:'100%',overflow:'hidden',height:'100%',zIndex:'0'}}>
+                <LazyImage id={'backgroundImage'+data.id} style={{zIndex:'0',width:'100%',height:'100%',objectFit:'cover',objectPosition:'center'}} src={process.env.REACT_APP_API_URL + JSON.parse(data.obj || "{}").background} alt=''/>
+                <div style={{position:'absolute',top:'0',left:'0',zIndex:'1',width:'100%',height:'100%',background:inface.width / inface.height > 0.82?((JSON.parse(data.obj || "{}").fBack || '#000000') + (JSON.parse(data.obj || "{}").fOpacity !== null?JSON.parse(data.obj || "{}").fOpacity * 255:0.5 * 255).toString(16).split('.')[0]):((JSON.parse(data.obj || "{}").fBackM || '#000000') + (JSON.parse(data.obj || "{}").fOpacityM !== null?JSON.parse(data.obj || "{}").fOpacityM * 255:0.5 * 255).toString(16).split('.')[0]),transitionDuration:'0.3s'}}></div>
+            </div>:JSON.parse(data.obj || "{}").background && data.type !== 'Товар' && JSON.parse(data.obj || "{}").background.length > 4 &&<LazyImage id={'backgroundImage'+data.id} style={{width:'100%',height:'100%',objectFit:'contain',objectPosition:'center'}} src={process.env.REACT_APP_API_URL + JSON.parse(data.obj || "{}").background} alt=''/>}
             {output()}
             {(data.type==='Контейнер' || data.type==='Список товаров') && user.role > 3 && document.location.pathname.includes(ADMIN_ROUTE) &&<div style={{position:'relative',width:'100%',height:'4px',display:inface.moveblock === 'block'+data.id && inface.blockType?'grid':'none',placeItems:'center',}}>
                 <div style={{background:inface.acolor2 || inface.acolor2,width:'100%',height:'4px',top:'0',borderRadius:'4px'}}></div>

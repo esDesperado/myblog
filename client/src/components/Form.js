@@ -1,25 +1,19 @@
-import React, {useContext,useState,useEffect,useRef,createRef} from 'react';
+import React, {useContext,useState} from 'react';
 import {Context} from '../index';
-import {NavLink,useNavigate} from "react-router-dom";
 import {observer} from "mobx-react-lite";
-import {setBAttr,deleteBlock,deleteComponent,addComponent,setCAttr,auth,callMe} from "../http/API"
-import {Editor} from '@tinymce/tinymce-react';
-import {ADMIN_ROUTE} from "../utils/consts";
-import Distrib from "./Distrib"
-import LazyImage from "./LazyImage";
+import {callMe} from "../http/API"
 
 const Block = observer((data,v) => {
-    const {user,product,inface} = useContext(Context)
+    const {inface} = useContext(Context)
     data = data.data
-    let arr1 = inface.blocks.filter(d=>d.parent === 'block'+data.id).slice().sort((a,b)=>a.priority-b.priority)
-
     const [formObj,setFormObj] = useState({})
     const [formSent,setFormSent] = useState(localStorage.getItem('callCond')?true:false)
     function callMeClick(){
         let formCond = true
         if(JSON.parse(data.obj || '{}').inputs.length){
             JSON.parse(data.obj || '{}').inputs.map(d=>{
-                if(formObj[d] && formObj[d].length > 1){return}else{formCond = false}
+                if(!(formObj[d] && formObj[d].length > 1)){formCond = false}
+                return true
             })
         }
         if(formCond){

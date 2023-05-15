@@ -2,7 +2,6 @@
 import {Context} from '../index';
 import {observer} from "mobx-react-lite";
 import LazyImage from "./LazyImage";
-
 const Block = observer((data,v) => {
     const {inface} = useContext(Context)
     data = data.data
