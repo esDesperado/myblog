@@ -1,82 +1,94 @@
 const ApiError = require('../error/ApiError')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const nodemailer = require('nodemailer')
 const fs = require('fs');
-const {Visitors} = require('../models/models')
+const {Users} = require('../models/models')
 
-const generateJwt = (login,role) => {
+const generateJwt = (id,email,username) => {
     return jwt.sign(
-        {login,role},
+        {id,email,username},
         process.env.ROLE_KEY,
         //{expiresIn:'24h'}
     )
 }
+//bcrypt.compareSync(password,process.env.DB_DOMAIN)
 class UserController{
-    async logIn(req,res,next){
+    async sendMail(req,res,next){
         try{
-            let file = 'login.js'
-            let ip = ((req.headers['x-forwarded-for'] || '').split(',')[0] || req.connection.remoteAddress).replace(/[^+\d.]/g,'')
-            let visitor = await Visitors.findOne({where:{ip}})
-            if(!visitor){await Visitors.create({streak:0,count:0,ip,date:new Date().toISOString().split('T')[0]});visitor = await Visitors.findOne({where:{ip}})}
-            if(visitor.streak < 25 || new Date().toISOString().split('T')[0] !== visitor.date){
-                if(new Date().toISOString().split('T')[0] !== visitor.date && visitor.streak > 5){
-                    visitor.streak = visitor.streak - 5
-                }else{
-                    visitor.streak = visitor.streak + 1
-                }
-                visitor.count = visitor.count + 1
-                visitor.date = new Date().toISOString().split('T')[0]
-                await visitor.save()
-                const {login, password, cond,sc} = req.body
-                if(cond && sc !== '5_Ax1v_3lF51Sd_7cp8_i2s3Ml9!%@^____-PwE_0L_q_qQ'){
-                    return res.json('false')
-                }else{
-                    let role = 3
-                    if(login === process.env.AP_USER_LOGIN && bcrypt.compareSync(password,process.env.DB_DOMAIN)){
-                        const token = generateJwt(login,role)
-                        visitor.streak = 0
-                        await visitor.save()
-                        return res.json({token})
-                    }
-                    if(login !== process.env.AP_LOGIN){
-                        return res.json('false')//next(ApiError.internal("Неверный логин или пароль"))
-                    }
-                    if(!bcrypt.compareSync(password,process.env.DB_API)){
-                        return res.json('false')//next(ApiError.internal("Неверный логин или пароль"))
-                    }else{
-                        role = 4
-                    }
-                    fs.access(file, fs.constants.F_OK, (err) => {
-                        if(!err){
-                            visitor.streak = 0
-                            visitor.save()
-                            const token = generateJwt(login,role)
-                            return res.json({token})
-                        }else{
-                            return res.json('false')
-                        }
-                    });
-                }
-            }else{
-                return res.json('false')
+            const {email} = req.body
+            let user = await Users.findOne({where:{email}})
+            if(!user){
+                user = await Users.create({email:email,name:""})
             }
+            let code = Math.floor(Math.random() * (9999 - 1000)) + 1000 + ''
+            user.code = await bcrypt.hash(code,5)
+            await user.save()
+            let transporter = await nodemailer.createTransport({
+                service:'mail',
+                host:'smtp.mail.ru',
+                port:465,
+                secure:true,
+                auth:{
+                    user:process.env.MAIL_ADDRESS,
+                    pass:process.env.APP_P
+                },
+                tls:{
+                    rejectUnauthorized:false,
+                }
+            })
+            const mailOptions ={
+                from:process.env.MAIL_ADDRESS,
+                to:email,
+                subject:'Код подтверждения',
+                html:`<div style="color:black;font-size:2.5em;backgroundColor:white;">
+                        ${code} Ваш код подтверждения
+                    </div>`
+            }
+            await transporter.sendMail(mailOptions)
+            return res.json(true)
+        }catch(e){
+            next(ApiError.badRequest(e.message))
+        }
+    }
+    async checkCode(req,res,next){
+        try{
+            const {email, code} = req.body
+            let user = await Users.findOne({where:{email}})
+            if(bcrypt.compareSync(code, user.code)){
+                const token = generateJwt(user.id,email,user.username)
+                return res.json({token})
+            }
+            return res.json(false)
+        }catch(e){
+            next(ApiError.badRequest(e.message))
+        }
+    }
+    async setName(req,res,next){
+        try{
+            const {username} = req.body
+            let user = await Users.findOne({where:{id:req.user.id}})
+            user.username = username
+            await user.save()
+            let token = generateJwt(req.user.id,req.user.email,username)
+            return res.json({token})
         }catch(e){
             next(ApiError.badRequest(e.message))
         }
     }
     async check(req,res,next){
         try{
-            let token
-            let file = 'login.js'
-            await fs.access(file, fs.constants.F_OK, (err) => {
-                if(!err){
-                    token = generateJwt(req.user.login,req.user.role)
-                    return res.json({token})
-                }else{
-                    token = 'NO TOKEN'
-                    return res.json({token})
-                }
-            });
+            let token = generateJwt(req.user.id,req.user.email,req.user.username)
+            return res.json({token})
+        }catch(e){
+            next(ApiError.badRequest(e.message))
+        }
+    }
+    async getUsers(req,res,next){
+        try{
+            let data = await Users.findAll()
+            data = data.map(({id,username})=>{return {id,username}})
+            return res.json(data)
         }catch(e){
             next(ApiError.badRequest(e.message))
         }

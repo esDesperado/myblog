@@ -3,23 +3,19 @@ import {BrowserRouter} from "react-router-dom";
 import AppRouter from "./components/AppRouter"
 import {observer} from "mobx-react-lite";
 import {Context} from "./index";
-import {check,fetchComponents,getInterface,fetchBlocks} from "./http/API";
+import {check, getUsers, getPosts} from "./http/API";
 const App = observer(() => {
     const {user,inface} = useContext(Context)
     useEffect(()=>{
-        if(user.role > 0){
-            const timer = setInterval(()=>{
-                check().then(data => {
-                    if(data.role !== user.role){user.setRole(data.role)}
-                }).catch(data=>{user.setRole(0)})
-            },12500)
-            return () => clearTimeout(timer)
+        if(!user.isAuth){
+            check().then(data => {
+                if(!user.isAuth){user.setIsAuth(true);user.setUser(data)}
+            }).catch(data=>{})
         }
-    },[user.role])
+    },[user.isAuth])
     useEffect(()=>{
         if(document.documentElement.clientHeight > inface.height + 5){
             inface.setHeight(document.documentElement.clientHeight)
-            //document.getElementById('theOnlyOneBody').style.minHeight = document.documentElement.clientHeight + 'px'
         }
         window.addEventListener('resize', ()=> {
             if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
@@ -33,84 +29,45 @@ const App = observer(() => {
                 inface.setWidth(document.documentElement.clientWidth)
                 if(document.documentElement.clientHeight < inface.height + 20){
                     inface.setHeight(document.documentElement.clientHeight)
-                    //document.getElementById('theOnlyOneBody').style.minHeight = document.documentElement.clientHeight + 'px'
                 }
             }
             if(document.documentElement.clientHeight > inface.height + 5){
                 inface.setHeight(document.documentElement.clientHeight)
-                //document.getElementById('theOnlyOneBody').style.minHeight = document.documentElement.clientHeight + 'px'
             }
         });
     },[document.documentElement.clientHeight])
     const [loading, setLoading] = useState(true)
-    if(new Date().toISOString().split('T')[0] !== localStorage.getItem('tryDate') && localStorage.getItem('tryCount')){localStorage.removeItem('tryCount')}
-    if(new Date().toISOString().split('T')[0] !== localStorage.getItem('callCond')){localStorage.removeItem('callCond')}
-    if(new Date().toISOString().split('T')[0] !== localStorage.getItem('quizCond')){localStorage.removeItem('quizCond')}
     useEffect(()=>{
-        /*
-        let form = new FormData()
-        form.append('title','11')
-        changeSite('getHash',form).then(data=>console.log(data))*/
-        if(localStorage.getItem('panColor')){inface.setAcolor(localStorage.getItem('panColor'))}
-        if(localStorage.getItem('panBack')){inface.setAback(localStorage.getItem('panBack'))}
-        if(document.querySelector('#mainCI') && inface.interface.main){document.querySelector('#mainCI').value = inface.interface.main}
-        if(document.querySelector('#backCI') && inface.interface.background){document.querySelector('#backCI').value = inface.interface.background}
-        if(document.querySelector('#fontCI') && inface.interface.color){document.querySelector('#fontCI').value = inface.interface.color}
-        if(document.querySelector('#panColor')){document.querySelector('#panColor').value = inface.acolor}
-        if(document.querySelector('#panBack')){document.querySelector('#panBack').value = inface.aback}
-    },[inface.interface,user.role])
-    useEffect(()=>{
-        if(inface.interface.id > -1){}else{
-            getInterface().then(data=>{
-                inface.setInterface(data)
-                let link = document.querySelector("link[rel~='icon']");
-                if (!link) {
-                    link = document.createElement('link');
-                    link.rel = 'icon';
-                    document.getElementsByTagName('head')[0].appendChild(link);
-                }
-                link.href = process.env.REACT_APP_API_URL + data.favicon;
-                document.getElementById('theOnlyOneBody').style.backgroundColor = data.mainColor
-                document.getElementById('theOnlyOneBody').style.color = data.fontColor
-            })
+        if(!inface.posts.length){
+            getUsers().then(data=>{user.setUsers(data);})
+            getPosts(inface.page,inface.limit).then(data=>{
+                inface.setPosts(data.data);
+                inface.setCount(data.count);
+            }).catch(err=>{console.log(err)})
         }
-        if(!inface.components.length){
-            fetchComponents().then(data=>{
-                inface.setComponents(data)
-            })
-        }
-        if(!inface.blocks.length || !inface.pages.length || !inface.images.length){
-            fetchBlocks().then(data=>{inface.setBlocks(data.blocks);inface.setPages(data.pages);inface.setImages(data.images);inface.setPatterns(data.patterns)})
-        }
-        if(user.role === 0){
+        if(!user.isAuth){
             window.addEventListener('storage', (event) => {
                 if (event.storageArea !== localStorage){}else{
                 if (event.key === 'token') {
                     check().then(data => {
-                        if(user.role !== data.role){console.log(data.role);user.setRole(data.role)}
+                        if(user.role !== data.role){
+                            user.setIsAuth(true);user.setUser(data);
+                        }
                     }).catch(data=>{
-                        user.setRole(0)
+                        user.setIsAuth(true);
+                        user.setUser(data);
                     }).finally(()=>{setLoading(false)})
                 }}
             });
-            check().then(data => {
-                if(user.role !== data.role){user.setRole(data.role)}
-            }).catch(data=>{
-                user.setRole(0)
-            }).finally(()=>{setLoading(false)})
+            check().finally(()=>{setLoading(false)})
         }
-    },[user.role,window.localStorage.getItem('token'),localStorage.getItem('token')])
-    useEffect(()=>{
-        if(inface.interface.js){
-            try{window.eval(inface.interface.js)}catch(err){console.error('Ошибка во время исполнения кода: \n\n',err)}
-        }
-    },[inface.interface.js])
+    },[user.isAuth,window.localStorage.getItem('token'),localStorage.getItem('token')])
     if(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
         if(!inface.mobile){
-            inface.setMobile(true)
+            inface.setMobile(true);
         }
     }else if(inface.mobile){
-        inface.setMobile(false)
+        inface.setMobile(false);
     }
     if(loading){
         return(
@@ -125,19 +82,10 @@ const App = observer(() => {
 
     return (
         <BrowserRouter>
-            <style>{inface.interface.css}</style>
             <AppRouter/>
             <svg display='none' preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                <symbol fill="none" id='cartSVG' >
-                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.5 3m0 0L7 15h11l3-9H5.5z"/>
-                    <circle cx="8" cy="20" r="1" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"/>
-                    <circle cx="17" cy="20" r="1" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"/>
-                </symbol>
-                <symbol id='chartSVG'>
-                    <path d="M9 6h2v14H9zm4 2h2v12h-2zm4-4h2v16h-2zM5 12h2v8H5z"/>
-                </symbol>
-                <symbol id='heartSVG'>
-                    <g data-name="Layer 2"><g data-name="heart"><rect width="24" height="24" opacity="0"/><path d="M12 21a1 1 0 0 1-.71-.29l-7.77-7.78a5.26 5.26 0 0 1 0-7.4 5.24 5.24 0 0 1 7.4 0L12 6.61l1.08-1.08a5.24 5.24 0 0 1 7.4 0 5.26 5.26 0 0 1 0 7.4l-7.77 7.78A1 1 0 0 1 12 21zM7.22 6a3.2 3.2 0 0 0-2.28.94 3.24 3.24 0 0 0 0 4.57L12 18.58l7.06-7.07a3.24 3.24 0 0 0 0-4.57 3.32 3.32 0 0 0-4.56 0l-1.79 1.8a1 1 0 0 1-1.42 0L9.5 6.94A3.2 3.2 0 0 0 7.22 6z"/></g></g>
+                <symbol id='writeSVG'>
+                    <path fillRule="evenodd" clipRule="evenodd" d="M19.186 2.09c.521.25 1.136.612 1.625 1.101.49.49.852 1.104 1.1 1.625.313.654.11 1.408-.401 1.92l-7.214 7.213c-.31.31-.688.541-1.105.675l-4.222 1.353a.75.75 0 0 1-.943-.944l1.353-4.221a2.75 2.75 0 0 1 .674-1.105l7.214-7.214c.512-.512 1.266-.714 1.92-.402zm.211 2.516a3.608 3.608 0 0 0-.828-.586l-6.994 6.994a1.002 1.002 0 0 0-.178.241L9.9 14.102l2.846-1.496c.09-.047.171-.107.242-.178l6.994-6.994a3.61 3.61 0 0 0-.586-.828zM4.999 5.5A.5.5 0 0 1 5.47 5l5.53.005a1 1 0 0 0 0-2L5.5 3A2.5 2.5 0 0 0 3 5.5v12.577c0 .76.082 1.185.319 1.627.224.419.558.754.977.978.442.236.866.318 1.627.318h12.154c.76 0 1.185-.082 1.627-.318.42-.224.754-.559.978-.978.236-.442.318-.866.318-1.627V13a1 1 0 1 0-2 0v5.077c0 .459-.021.571-.082.684a.364.364 0 0 1-.157.157c-.113.06-.225.082-.684.082H5.923c-.459 0-.57-.022-.684-.082a.363.363 0 0 1-.157-.157c-.06-.113-.082-.225-.082-.684V5.5z" fill="#000000"/>
                 </symbol>
                 <symbol id='crossSVG'>
                     <g>
@@ -147,14 +95,6 @@ const App = observer(() => {
                             c0.397,0.396,0.936,0.62,1.498,0.62s1.1-0.224,1.497-0.62l38.374-38.374l38.374,38.374c0.397,0.396,0.937,0.62,1.498,0.62
                             s1.101-0.224,1.498-0.62l5.473-5.476c0.826-0.827,0.826-2.167,0-2.994L55.931,47.463z"/>
                     </g>
-                </symbol>
-                <symbol id='phoneSVG'>
-                    <path d="M53.364,40.908c-2.008-3.796-8.981-7.912-9.288-8.092c-0.896-0.51-1.831-0.78-2.706-0.78c-1.301,0-2.366,0.596-3.011,1.68
-                    c-1.02,1.22-2.285,2.646-2.592,2.867c-2.376,1.612-4.236,1.429-6.294-0.629L17.987,24.467c-2.045-2.045-2.233-3.928-0.632-6.291
-                    c0.224-0.309,1.65-1.575,2.87-2.596c0.778-0.463,1.312-1.151,1.546-1.995c0.311-1.123,0.082-2.444-0.652-3.731
-                    c-0.173-0.296-4.291-7.27-8.085-9.277c-0.708-0.375-1.506-0.573-2.306-0.573c-1.318,0-2.558,0.514-3.49,1.445L4.7,3.986
-                    c-4.014,4.013-5.467,8.562-4.321,13.52c0.956,4.132,3.742,8.529,8.282,13.068l14.705,14.705c5.746,5.746,11.224,8.66,16.282,8.66
-                    c0,0,0,0,0.001,0c3.72,0,7.188-1.581,10.305-4.698l2.537-2.537C54.033,45.163,54.383,42.833,53.364,40.908z"/>
                 </symbol>
                 <symbol id='deleteSVG'>
                     <g>
@@ -174,9 +114,6 @@ const App = observer(() => {
                     <path d="M54.454,23.18l-18.609-0.002L35.844,5.91C35.845,2.646,33.198,0,29.934,0c-3.263,0-5.909,2.646-5.909,5.91v17.269
                     L5.91,23.178C2.646,23.179,0,25.825,0,29.088c0.002,3.264,2.646,5.909,5.91,5.909h18.115v19.457c0,3.267,2.646,5.91,5.91,5.91
                     c3.264,0,5.909-2.646,5.91-5.908V34.997h18.611c3.262,0,5.908-2.645,5.908-5.907C60.367,25.824,57.718,23.178,54.454,23.18z"/>
-                </symbol>
-                <symbol id='linesSVG'>
-                    <polygon fill="white" opacity="0.2" points="90,0 180,0 90,180 0,180" />
                 </symbol>
                 <symbol id='exitSVG'>
                     <path
@@ -211,138 +148,6 @@ const App = observer(() => {
                     <path d="M4 9.5C5.38071 9.5 6.5 10.6193 6.5 12C6.5 13.3807 5.38071 14.5 4 14.5C2.61929 14.5 1.5 13.3807 1.5 12C1.5 10.6193 2.61929 9.5 4 9.5Z"/>
                     <path d="M12 9.5C13.3807 9.5 14.5 10.6193 14.5 12C14.5 13.3807 13.3807 14.5 12 14.5C10.6193 14.5 9.5 13.3807 9.5 12C9.5 10.6193 10.6193 9.5 12 9.5Z"/>
                     <path d="M22.5 12C22.5 10.6193 21.3807 9.5 20 9.5C18.6193 9.5 17.5 10.6193 17.5 12C17.5 13.3807 18.6193 14.5 20 14.5C21.3807 14.5 22.5 13.3807 22.5 12Z"/>
-                </symbol>
-                <symbol id='monitorSVG'>
-                    <path d="M8 21H16M12 17V21M6.8 17H17.2C18.8802 17 19.7202 17 20.362 16.673C20.9265 16.3854 21.3854 15.9265 21.673 15.362C22 14.7202 22 13.8802 22 12.2V7.8C22 6.11984 22 5.27976 21.673 4.63803C21.3854 4.07354 20.9265 3.6146 20.362 3.32698C19.7202 3 18.8802 3 17.2 3H6.8C5.11984 3 4.27976 3 3.63803 3.32698C3.07354 3.6146 2.6146 4.07354 2.32698 4.63803C2 5.27976 2 6.11984 2 7.8V12.2C2 13.8802 2 14.7202 2.32698 15.362C2.6146 15.9265 3.07354 16.3854 3.63803 16.673C4.27976 17 5.11984 17 6.8 17Z" fill='none' strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </symbol>
-                <symbol id='smartphoneSVG'>
-                    <path d="M12 18.01V18M8 3H16C17.1046 3 18 3.89543 18 5V19C18 20.1046 17.1046 21 16 21H8C6.89543 21 6 20.1046 6 19V5C6 3.89543 6.89543 3 8 3Z" fill='none' strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </symbol>
-                <symbol id='upSVG'>
-                    <polygon points="22.3,18.5 12,8.2 1.7,18.5 0.3,17.1 12,5.4 23.7,17.1 		"/>
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
-                </symbol>
-                <symbol >
-
                 </symbol>
             </svg>
         </BrowserRouter>

@@ -1,0 +1,72 @@
+Документация к сайту MYBLOG.NET
+
+Адрес сервера: http://62.113.96.37:7000
+Адрес клиента: http://wellsites.store или http://62.113.96.37
+
+API:
+Создать запись:
+body:(text,file,page,limit
+POST:'api/posts/'
+возвращает json объект который содержит массив data и число count
+data - список записей на этой страницу
+count - количество записей в базе данных
+
+Редактировать запись:
+body:(id,text,media,page,limit
+PUT:'api/posts/'
+возвращает json объект который содержит массив data и число count
+data - список записей на этой страницу
+count - количество записей в базе данных
+
+Удалить запись:
+parameter:id
+body:(page,limit)
+POST:'api/posts/delete'
+возвращает json объект который содержит массив data и число count
+data - список записей на этой страницу
+count - количество записей в базе данных
+
+Получить список записей на странице:
+body:(page,limit)
+POST:'api/posts/get'
+возвращает json объект который содержит массив data и число count
+data - список записей на этой страницу
+count - количество записей в базе данных
+
+Авторизация: отправка адреса электронной почты
+body:(email)
+POST:'api/user/sendMail'
+возвращает true
+
+Авторизация: отправка проверочного кода
+body:(email,code)
+POST:'api/user/checkCode'
+возвращает jwt токен
+
+Создать имя пользователя (при регистрации)
+body:(username)
+POST:'api/user/setName'
+возвращает jwt токен
+
+Проверка авторизации и получение токена
+GET:'api/user/auth'
+возвращает jwt токен
+
+Получение списка пользователей (только username и id)
+GET:'api/user/getUsers'
+возвращает список пользователей
+
+Структура базы данных (postgreSQL):
+
+Таблица users:
+    id:INTEGER, primaryKey:true, autoIncrement:true
+    username:STRING
+    email:STRING
+    code:STRING
+
+Таблица posts
+    id:INTEGER, primaryKey:true, autoIncrement:true
+    text:STRING(9999999)
+    author:INTEGER
+    media:STRING
+    date:DATE

@@ -1,8 +1,12 @@
 import MainPage from "./pages/other/MainPage";
-import {MP_ROUTE,ADMIN_ROUTE} from "./utils/consts";
+import LoginPage from "./pages/other/Login";
 export const publicRoutes = [
     {
-        path:ADMIN_ROUTE,
+        path:"/",
         Component: MainPage
+    },
+    {
+        path:"/login",
+        Component: LoginPage
     },
 ]
